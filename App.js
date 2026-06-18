@@ -82,8 +82,12 @@ function MainApp() {
   const [customerForm, setCustomerForm] = useState(emptyCustomerForm);
 
   const [customerScreen, setCustomerScreen] = useState("products");
+  const [customerProductSearch, setCustomerProductSearch] = useState("");
 
   const [cart, setCart] = useState([]);
+
+  const [productDetailsVisible, setProductDetailsVisible] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
 
   const [checkoutVisible, setCheckoutVisible] = useState(false);
   const [checkoutForm, setCheckoutForm] = useState({
@@ -175,6 +179,22 @@ function MainApp() {
       customerInfo: "Customer Info",
       items: "Items",
       cannotEditOrder: "This order cannot be edited",
+
+      cancelOrder: "Cancel Order",
+      cancelOrderTitle: "Cancel Order",
+      cancelOrderConfirm:
+        "Are you sure you want to cancel this order? The quantity will be returned to stock.",
+      cancelOrderSuccessTitle: "Order Cancelled",
+      cancelOrderSuccessMessage:
+        "The order was cancelled and the quantity was returned to stock.",
+      cannotCancelOrder: "This order cannot be cancelled",
+
+      productDetails: "Product Details",
+      viewDetails: "View Details",
+      description: "Description",
+      noDescription: "No description available",
+      searchProduct: "Search product...",
+      clearSearch: "Clear",
     },
 
     ar: {
@@ -240,6 +260,22 @@ function MainApp() {
       customerInfo: "بيانات الزبون",
       items: "المنتجات",
       cannotEditOrder: "لا يمكن تعديل هذا الطلب",
+
+      cancelOrder: "إلغاء الطلب",
+      cancelOrderTitle: "إلغاء الطلب",
+      cancelOrderConfirm:
+        "هل أنت متأكد أنك تريد إلغاء هذا الطلب؟ سيتم إرجاع الكمية إلى المخزون.",
+      cancelOrderSuccessTitle: "تم إلغاء الطلب",
+      cancelOrderSuccessMessage:
+        "تم إلغاء الطلب وإرجاع الكمية إلى المخزون.",
+      cannotCancelOrder: "لا يمكن إلغاء هذا الطلب",
+
+      productDetails: "تفاصيل المنتج",
+      viewDetails: "تفاصيل المنتج",
+      description: "الوصف",
+      noDescription: "لا يوجد وصف متوفر",
+      searchProduct: "ابحث عن منتج...",
+      clearSearch: "مسح",
     },
 
     he: {
@@ -305,6 +341,22 @@ function MainApp() {
       customerInfo: "פרטי לקוח",
       items: "מוצרים",
       cannotEditOrder: "לא ניתן לערוך הזמנה זו",
+
+      cancelOrder: "ביטול הזמנה",
+      cancelOrderTitle: "ביטול הזמנה",
+      cancelOrderConfirm:
+        "האם אתה בטוח שברצונך לבטל הזמנה זו? הכמות תחזור למלאי.",
+      cancelOrderSuccessTitle: "ההזמנה בוטלה",
+      cancelOrderSuccessMessage:
+        "ההזמנה בוטלה והכמות הוחזרה למלאי.",
+      cannotCancelOrder: "לא ניתן לבטל הזמנה זו",
+
+      productDetails: "פרטי מוצר",
+      viewDetails: "פרטי מוצר",
+      description: "תיאור",
+      noDescription: "אין תיאור זמין",
+      searchProduct: "חפש מוצר...",
+      clearSearch: "נקה",
     },
   };
 
@@ -368,6 +420,7 @@ function MainApp() {
       setCurrentUser(null);
       setActiveScreen("dashboard");
       setCustomerScreen("products");
+      setCustomerProductSearch("");
 
       setOrders([]);
       setProducts([]);
@@ -376,6 +429,8 @@ function MainApp() {
       setSearch("");
       setStatusFilter("all");
       setCart([]);
+      setProductDetailsVisible(false);
+      setSelectedProduct(null);
       setCheckoutVisible(false);
       setCustomerOrderDetailsVisible(false);
       setSelectedCustomerOrder(null);
@@ -604,6 +659,20 @@ function MainApp() {
     }, 0);
   }, [cart]);
 
+  const customerFilteredProducts = useMemo(() => {
+    const text = customerProductSearch.trim().toLowerCase();
+
+    if (!text) return products;
+
+    return products.filter((product) => {
+      return (
+        (product.name || "").toLowerCase().includes(text) ||
+        (product.category || "").toLowerCase().includes(text) ||
+        (product.description || "").toLowerCase().includes(text)
+      );
+    });
+  }, [products, customerProductSearch]);
+
   function resetSearchWhenSwitchScreen(screenKey) {
     setActiveScreen(screenKey);
     setSearch("");
@@ -733,7 +802,7 @@ function MainApp() {
               },
             ]}
           >
-            {ct("productsTab")}
+                        {ct("productsTab")}
           </Text>
         </Pressable>
 
@@ -782,6 +851,16 @@ function MainApp() {
         </Pressable>
       </View>
     );
+  }
+
+  function openProductDetails(product) {
+    setSelectedProduct(product);
+    setProductDetailsVisible(true);
+  }
+
+  function closeProductDetails() {
+    setSelectedProduct(null);
+    setProductDetailsVisible(false);
   }
 
   function addToCart(product) {
@@ -973,6 +1052,58 @@ function MainApp() {
     const status = order?.status || "pending";
 
     return status === "pending" || status === "processing";
+  }
+
+  function canCancelCustomerOrder(order) {
+    const status = order?.status || "pending";
+
+    return status === "pending" || status === "processing";
+  }
+
+  async function cancelCustomerOrder(order) {
+    if (!order?._id) return;
+
+    if (!canCancelCustomerOrder(order)) {
+      Alert.alert(ct("orderErrorTitle"), ct("cannotCancelOrder"));
+      return;
+    }
+
+    Alert.alert(ct("cancelOrderTitle"), ct("cancelOrderConfirm"), [
+      {
+        text: ct("cancel"),
+        style: "cancel",
+      },
+      {
+        text: ct("cancelOrder"),
+        style: "destructive",
+        onPress: async () => {
+          try {
+            setLoading(true);
+
+            const response = await axios.patch(
+              `${ordersUrl}/${order._id}/status`,
+              {
+                status: "cancelled",
+              }
+            );
+
+            setSelectedCustomerOrder(response.data);
+            setCustomerOrderEditMode(false);
+
+            await fetchAllData();
+
+            Alert.alert(
+              ct("cancelOrderSuccessTitle"),
+              ct("cancelOrderSuccessMessage")
+            );
+          } catch (error) {
+            showError(ct("orderErrorTitle"), error);
+          } finally {
+            setLoading(false);
+          }
+        },
+      },
+    ]);
   }
 
   function openCustomerOrderDetails(order) {
@@ -1314,119 +1445,162 @@ function MainApp() {
 
   function renderProductsList() {
     return (
-      <FlatList
-        data={products}
-        keyExtractor={(item) => item._id}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-        contentContainerStyle={styles.customerList}
-        ListEmptyComponent={
-          <View style={styles.emptyBox}>
-            <Text style={[styles.emptyText, { color: theme.muted }]}>
-              {ct("noProducts")}
-            </Text>
-          </View>
-        }
-        renderItem={({ item }) => {
-          const stock = Number(item.stock || 0);
-          const available = stock > 0;
+      <View style={styles.productsSearchContainer}>
+        <View
+          style={[
+            styles.customerSearchBox,
+            { flexDirection: isRTL ? "row-reverse" : "row" },
+          ]}
+        >
+          <TextInput
+            style={[
+              styles.customerSearchInput,
+              { textAlign: isRTL ? "right" : "left" },
+            ]}
+            placeholder={ct("searchProduct")}
+            placeholderTextColor="#777"
+            value={customerProductSearch}
+            onChangeText={setCustomerProductSearch}
+          />
 
-          return (
-            <View
-              style={[
-                styles.customerProductCard,
-                { backgroundColor: theme.card },
-              ]}
+          {customerProductSearch.trim() ? (
+            <Pressable
+              style={styles.clearSearchButton}
+              onPress={() => setCustomerProductSearch("")}
             >
+              <Text style={styles.clearSearchText}>{ct("clearSearch")}</Text>
+            </Pressable>
+          ) : null}
+        </View>
+
+        <FlatList
+          data={customerFilteredProducts}
+          keyExtractor={(item) => item._id}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+          contentContainerStyle={styles.customerList}
+          ListEmptyComponent={
+            <View style={styles.emptyBox}>
+              <Text style={[styles.emptyText, { color: theme.muted }]}>
+                {ct("noProducts")}
+              </Text>
+            </View>
+          }
+          renderItem={({ item }) => {
+            const stock = Number(item.stock || 0);
+            const available = stock > 0;
+
+            return (
               <View
                 style={[
-                  styles.customerProductHeader,
-                  { flexDirection: isRTL ? "row-reverse" : "row" },
+                  styles.customerProductCard,
+                  { backgroundColor: theme.card },
                 ]}
               >
-                <View style={{ flex: 1 }}>
-                  <Text
-                    style={[
-                      styles.customerProductTitle,
-                      {
-                        color: theme.text,
-                        textAlign: isRTL ? "right" : "left",
-                      },
-                    ]}
-                  >
-                    {item.name || ct("unknownProduct")}
-                  </Text>
-
-                  <Text
-                    style={[
-                      styles.customerProductText,
-                      {
-                        color: theme.muted,
-                        textAlign: isRTL ? "right" : "left",
-                      },
-                    ]}
-                  >
-                    {ct("category")}: {item.category || ct("general")}
-                  </Text>
-
-                  <Text
-                    style={[
-                      styles.customerProductStrong,
-                      {
-                        color: theme.text,
-                        textAlign: isRTL ? "right" : "left",
-                      },
-                    ]}
-                  >
-                    {ct("price")}: {formatMoney(item.price)}
-                  </Text>
-
-                  <Text
-                    style={[
-                      styles.customerProductText,
-                      {
-                        color: theme.muted,
-                        textAlign: isRTL ? "right" : "left",
-                      },
-                    ]}
-                  >
-                    {ct("stock")}: {stock}
-                  </Text>
-                </View>
-
                 <View
                   style={[
-                    styles.customerBadge,
-                    {
-                      backgroundColor: available ? "#16A34A" : "#DC2626",
-                    },
+                    styles.customerProductHeader,
+                    { flexDirection: isRTL ? "row-reverse" : "row" },
                   ]}
                 >
-                  <Text style={styles.customerBadgeText}>
-                    {available ? ct("available") : ct("outOfStock")}
-                  </Text>
-                </View>
-              </View>
+                  <View style={{ flex: 1 }}>
+                    <Text
+                      style={[
+                        styles.customerProductTitle,
+                        {
+                          color: theme.text,
+                          textAlign: isRTL ? "right" : "left",
+                        },
+                      ]}
+                    >
+                      {item.name || ct("unknownProduct")}
+                    </Text>
 
-              <Pressable
-                style={[
-                  styles.orderNowButton,
-                  {
-                    backgroundColor: available ? theme.primary : "#9CA3AF",
-                  },
-                ]}
-                disabled={!available || loading}
-                onPress={() => addToCart(item)}
-              >
-                <Text style={styles.orderNowButtonText}>
-                  {ct("addToCart")}
-                </Text>
-              </Pressable>
-            </View>
-          );
-        }}
-      />
+                    <Text
+                      style={[
+                        styles.customerProductText,
+                        {
+                          color: theme.muted,
+                          textAlign: isRTL ? "right" : "left",
+                        },
+                      ]}
+                    >
+                      {ct("category")}: {item.category || ct("general")}
+                    </Text>
+
+                    <Text
+                      style={[
+                        styles.customerProductStrong,
+                        {
+                          color: theme.text,
+                          textAlign: isRTL ? "right" : "left",
+                        },
+                      ]}
+                    >
+                      {ct("price")}: {formatMoney(item.price)}
+                    </Text>
+
+                    <Text
+                      style={[
+                        styles.customerProductText,
+                        {
+                          color: theme.muted,
+                          textAlign: isRTL ? "right" : "left",
+                        },
+                      ]}
+                    >
+                      {ct("stock")}: {stock}
+                    </Text>
+                  </View>
+
+                  <View
+                    style={[
+                      styles.customerBadge,
+                      {
+                        backgroundColor: available ? "#16A34A" : "#DC2626",
+                      },
+                    ]}
+                  >
+                    <Text style={styles.customerBadgeText}>
+                      {available ? ct("available") : ct("outOfStock")}
+                    </Text>
+                  </View>
+                </View>
+
+                <Pressable
+                  style={[styles.detailsButton, { borderColor: theme.primary }]}
+                  onPress={() => openProductDetails(item)}
+                >
+                  <Text
+                    style={[
+                      styles.detailsButtonText,
+                      { color: theme.primary },
+                    ]}
+                  >
+                    {ct("viewDetails")}
+                  </Text>
+                </Pressable>
+
+                <Pressable
+                  style={[
+                    styles.orderNowButton,
+                    {
+                      backgroundColor: available ? theme.primary : "#9CA3AF",
+                    },
+                  ]}
+                  disabled={!available || loading}
+                  onPress={() => addToCart(item)}
+                >
+                  <Text style={styles.orderNowButtonText}>
+                    {ct("addToCart")}
+                  </Text>
+                </Pressable>
+              </View>
+            );
+          }}
+        />
+      </View>
     );
   }
 
@@ -1660,6 +1834,150 @@ function MainApp() {
     );
   }
 
+  function renderProductDetailsModal() {
+    if (!selectedProduct) return null;
+
+    const stock = Number(selectedProduct.stock || 0);
+    const available = stock > 0;
+
+    return (
+      <Modal
+        visible={productDetailsVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={closeProductDetails}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.checkoutModal, { backgroundColor: theme.card }]}>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <Text
+                style={[
+                  styles.checkoutTitle,
+                  {
+                    color: theme.text,
+                    textAlign: isRTL ? "right" : "left",
+                  },
+                ]}
+              >
+                {ct("productDetails")}
+              </Text>
+
+              <Text
+                style={[
+                  styles.customerProductTitle,
+                  {
+                    color: theme.text,
+                    textAlign: isRTL ? "right" : "left",
+                  },
+                ]}
+              >
+                {selectedProduct.name || ct("unknownProduct")}
+              </Text>
+
+              <Text
+                style={[
+                  styles.detailsText,
+                  {
+                    color: theme.muted,
+                    textAlign: isRTL ? "right" : "left",
+                  },
+                ]}
+              >
+                {ct("category")}: {selectedProduct.category || ct("general")}
+              </Text>
+
+              <Text
+                style={[
+                  styles.detailsText,
+                  {
+                    color: theme.muted,
+                    textAlign: isRTL ? "right" : "left",
+                  },
+                ]}
+              >
+                {ct("price")}: {formatMoney(selectedProduct.price)}
+              </Text>
+
+              <Text
+                style={[
+                  styles.detailsText,
+                  {
+                    color: theme.muted,
+                    textAlign: isRTL ? "right" : "left",
+                  },
+                ]}
+              >
+                {ct("stock")}: {stock}
+              </Text>
+
+              <View
+                style={[
+                  styles.customerBadge,
+                  {
+                    backgroundColor: available ? "#16A34A" : "#DC2626",
+                    marginTop: 10,
+                    marginBottom: 12,
+                    alignSelf: isRTL ? "flex-end" : "flex-start",
+                  },
+                ]}
+              >
+                <Text style={styles.customerBadgeText}>
+                  {available ? ct("available") : ct("outOfStock")}
+                </Text>
+              </View>
+
+              <Text
+                style={[
+                  styles.detailsSectionTitle,
+                  {
+                    color: theme.text,
+                    textAlign: isRTL ? "right" : "left",
+                  },
+                ]}
+              >
+                {ct("description")}
+              </Text>
+
+              <Text
+                style={[
+                  styles.productDescriptionText,
+                  {
+                    color: theme.text,
+                    textAlign: isRTL ? "right" : "left",
+                  },
+                ]}
+              >
+                {selectedProduct.description?.trim()
+                  ? selectedProduct.description
+                  : ct("noDescription")}
+              </Text>
+
+              <Pressable
+                style={[
+                  styles.submitOrderButton,
+                  {
+                    backgroundColor: available ? theme.primary : "#9CA3AF",
+                  },
+                ]}
+                disabled={!available || loading}
+                onPress={() => {
+                  addToCart(selectedProduct);
+                  closeProductDetails();
+                }}
+              >
+                <Text style={styles.submitOrderText}>{ct("addToCart")}</Text>
+              </Pressable>
+
+              <Pressable style={styles.cancelButton} onPress={closeProductDetails}>
+                <Text style={styles.cancelButtonText}>{ct("close")}</Text>
+              </Pressable>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+    );
+  }
+
   function renderCheckoutModal() {
     return (
       <Modal
@@ -1669,12 +1987,7 @@ function MainApp() {
         onRequestClose={closeCheckout}
       >
         <View style={styles.modalOverlay}>
-          <View
-            style={[
-              styles.checkoutModal,
-              { backgroundColor: theme.card },
-            ]}
-          >
+          <View style={[styles.checkoutModal, { backgroundColor: theme.card }]}>
             <ScrollView showsVerticalScrollIndicator={false}>
               <Text
                 style={[
@@ -1816,9 +2129,7 @@ function MainApp() {
                 onPress={submitCheckout}
                 disabled={loading}
               >
-                <Text style={styles.submitOrderText}>
-                  {ct("submitOrder")}
-                </Text>
+                <Text style={styles.submitOrderText}>{ct("submitOrder")}</Text>
               </Pressable>
 
               <Pressable style={styles.cancelButton} onPress={closeCheckout}>
@@ -1837,6 +2148,7 @@ function MainApp() {
     const orderTotal = getOrderTotal(selectedCustomerOrder);
     const itemsText = getItemsTextFromOrder(selectedCustomerOrder);
     const editable = canEditCustomerOrder(selectedCustomerOrder);
+    const cancellable = canCancelCustomerOrder(selectedCustomerOrder);
 
     return (
       <Modal
@@ -1846,12 +2158,7 @@ function MainApp() {
         onRequestClose={closeCustomerOrderDetails}
       >
         <View style={styles.modalOverlay}>
-          <View
-            style={[
-              styles.checkoutModal,
-              { backgroundColor: theme.card },
-            ]}
-          >
+          <View style={[styles.checkoutModal, { backgroundColor: theme.card }]}>
             <ScrollView showsVerticalScrollIndicator={false}>
               <Text
                 style={[
@@ -1996,9 +2303,22 @@ function MainApp() {
                         { backgroundColor: theme.primary },
                       ]}
                       onPress={() => setCustomerOrderEditMode(true)}
+                      disabled={loading}
                     >
                       <Text style={styles.submitOrderText}>
                         {ct("editOrder")}
+                      </Text>
+                    </Pressable>
+                  ) : null}
+
+                  {cancellable ? (
+                    <Pressable
+                      style={styles.dangerButton}
+                      onPress={() => cancelCustomerOrder(selectedCustomerOrder)}
+                      disabled={loading}
+                    >
+                      <Text style={styles.dangerButtonText}>
+                        {ct("cancelOrder")}
                       </Text>
                     </Pressable>
                   ) : null}
@@ -2237,6 +2557,7 @@ function MainApp() {
           <Text style={styles.customerLogoutText}>{ct("logout")}</Text>
         </Pressable>
 
+        {renderProductDetailsModal()}
         {renderCheckoutModal()}
         {renderCustomerOrderDetailsModal()}
       </View>
@@ -2504,6 +2825,42 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
 
+  productsSearchContainer: {
+    flex: 1,
+  },
+
+  customerSearchBox: {
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginBottom: 12,
+    alignItems: "center",
+    gap: 8,
+  },
+
+  customerSearchInput: {
+    flex: 1,
+    color: "#111827",
+    fontSize: 15,
+    paddingVertical: 8,
+  },
+
+  clearSearchButton: {
+    backgroundColor: "#DC2626",
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+
+  clearSearchText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "900",
+  },
+
   customerList: {
     paddingBottom: 90,
   },
@@ -2550,10 +2907,24 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
 
-  orderNowButton: {
+  detailsButton: {
     borderRadius: 14,
     paddingVertical: 13,
     marginTop: 14,
+    borderWidth: 1,
+    backgroundColor: "#FFFFFF",
+  },
+
+  detailsButtonText: {
+    fontSize: 15,
+    fontWeight: "900",
+    textAlign: "center",
+  },
+
+  orderNowButton: {
+    borderRadius: 14,
+    paddingVertical: 13,
+    marginTop: 10,
   },
 
   orderNowButtonText: {
@@ -2766,6 +3137,20 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
 
+  dangerButton: {
+    borderRadius: 16,
+    paddingVertical: 15,
+    marginTop: 10,
+    backgroundColor: "#DC2626",
+  },
+
+  dangerButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "900",
+    textAlign: "center",
+  },
+
   cancelButton: {
     borderRadius: 16,
     paddingVertical: 14,
@@ -2793,6 +3178,17 @@ const styles = StyleSheet.create({
   },
 
   itemsText: {
+    backgroundColor: "#F9FAFB",
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    borderRadius: 14,
+    padding: 12,
+    fontSize: 14,
+    lineHeight: 22,
+    marginBottom: 14,
+  },
+
+  productDescriptionText: {
     backgroundColor: "#F9FAFB",
     borderWidth: 1,
     borderColor: "#E5E7EB",
