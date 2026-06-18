@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
+  Image,
   Keyboard,
   Modal,
   Pressable,
@@ -100,9 +101,7 @@ function MainApp() {
 
   const [customerOrderDetailsVisible, setCustomerOrderDetailsVisible] =
     useState(false);
-
   const [selectedCustomerOrder, setSelectedCustomerOrder] = useState(null);
-
   const [customerOrderEditMode, setCustomerOrderEditMode] = useState(false);
 
   const [customerOrderEditForm, setCustomerOrderEditForm] = useState({
@@ -147,8 +146,6 @@ function MainApp() {
       cancelled: "Cancelled",
 
       addToCart: "Add to Cart",
-      addedToCartTitle: "Added",
-      addedToCartMessage: "Product added to cart",
       remove: "Remove",
       checkout: "Checkout",
       checkoutTitle: "Complete Order",
@@ -228,8 +225,6 @@ function MainApp() {
       cancelled: "ملغي",
 
       addToCart: "أضف للسلة",
-      addedToCartTitle: "تمت الإضافة",
-      addedToCartMessage: "تمت إضافة المنتج إلى السلة",
       remove: "حذف",
       checkout: "إتمام الطلب",
       checkoutTitle: "إتمام الطلب",
@@ -266,8 +261,7 @@ function MainApp() {
       cancelOrderConfirm:
         "هل أنت متأكد أنك تريد إلغاء هذا الطلب؟ سيتم إرجاع الكمية إلى المخزون.",
       cancelOrderSuccessTitle: "تم إلغاء الطلب",
-      cancelOrderSuccessMessage:
-        "تم إلغاء الطلب وإرجاع الكمية إلى المخزون.",
+      cancelOrderSuccessMessage: "تم إلغاء الطلب وإرجاع الكمية إلى المخزون.",
       cannotCancelOrder: "لا يمكن إلغاء هذا الطلب",
 
       productDetails: "تفاصيل المنتج",
@@ -309,8 +303,6 @@ function MainApp() {
       cancelled: "בוטל",
 
       addToCart: "הוסף לעגלה",
-      addedToCartTitle: "נוסף",
-      addedToCartMessage: "המוצר נוסף לעגלה",
       remove: "הסר",
       checkout: "לתשלום",
       checkoutTitle: "השלמת הזמנה",
@@ -347,8 +339,7 @@ function MainApp() {
       cancelOrderConfirm:
         "האם אתה בטוח שברצונך לבטל הזמנה זו? הכמות תחזור למלאי.",
       cancelOrderSuccessTitle: "ההזמנה בוטלה",
-      cancelOrderSuccessMessage:
-        "ההזמנה בוטלה והכמות הוחזרה למלאי.",
+      cancelOrderSuccessMessage: "ההזמנה בוטלה והכמות הוחזרה למלאי.",
       cannotCancelOrder: "לא ניתן לבטל הזמנה זו",
 
       productDetails: "פרטי מוצר",
@@ -372,7 +363,6 @@ function MainApp() {
 
   function ct(key) {
     const language = settings?.language || "en";
-
     return customerText[language]?.[key] || customerText.en[key] || key;
   }
 
@@ -722,6 +712,7 @@ function MainApp() {
       category: product.category || "",
       price: String(product.price ?? ""),
       stock: String(product.stock ?? ""),
+      imageUrl: product.imageUrl || "",
       description: product.description || "",
     });
 
@@ -802,7 +793,7 @@ function MainApp() {
               },
             ]}
           >
-                        {ct("productsTab")}
+            {ct("productsTab")}
           </Text>
         </Pressable>
 
@@ -898,6 +889,7 @@ function MainApp() {
           category: product.category || ct("general"),
           price: Number(product.price || 0),
           stock,
+          imageUrl: product.imageUrl || "",
           quantity: 1,
         },
       ];
@@ -1280,6 +1272,7 @@ function MainApp() {
       category: productForm.category.trim() || "General",
       price: Number(productForm.price),
       stock: Number(productForm.stock),
+      imageUrl: productForm.imageUrl?.trim() || "",
       description: productForm.description.trim(),
     };
 
@@ -1498,6 +1491,14 @@ function MainApp() {
                   { backgroundColor: theme.card },
                 ]}
               >
+                {item.imageUrl ? (
+                  <Image
+                    source={{ uri: item.imageUrl }}
+                    style={styles.customerProductImage}
+                    resizeMode="cover"
+                  />
+                ) : null}
+
                 <View
                   style={[
                     styles.customerProductHeader,
@@ -1629,6 +1630,14 @@ function MainApp() {
                   { backgroundColor: theme.card },
                 ]}
               >
+                {item.imageUrl ? (
+                  <Image
+                    source={{ uri: item.imageUrl }}
+                    style={styles.cartProductImage}
+                    resizeMode="cover"
+                  />
+                ) : null}
+
                 <Text
                   style={[
                     styles.customerProductTitle,
@@ -1861,6 +1870,14 @@ function MainApp() {
               >
                 {ct("productDetails")}
               </Text>
+
+              {selectedProduct.imageUrl ? (
+                <Image
+                  source={{ uri: selectedProduct.imageUrl }}
+                  style={styles.productDetailsImage}
+                  resizeMode="cover"
+                />
+              ) : null}
 
               <Text
                 style={[
@@ -2708,9 +2725,7 @@ function MainApp() {
     return (
       <View style={[styles.root, { backgroundColor: theme.background }]}>
         <ExpoStatusBar style="light" />
-
         <Header />
-
         <View style={styles.content}>{renderCustomerContent()}</View>
       </View>
     );
@@ -2873,6 +2888,14 @@ const styles = StyleSheet.create({
     borderColor: "#E5E7EB",
   },
 
+  customerProductImage: {
+    width: "100%",
+    height: 170,
+    borderRadius: 18,
+    marginBottom: 12,
+    backgroundColor: "#E5E7EB",
+  },
+
   customerProductHeader: {
     justifyContent: "space-between",
     gap: 10,
@@ -2944,6 +2967,14 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     borderWidth: 1,
     borderColor: "#E5E7EB",
+  },
+
+  cartProductImage: {
+    width: "100%",
+    height: 140,
+    borderRadius: 16,
+    marginBottom: 12,
+    backgroundColor: "#E5E7EB",
   },
 
   cartActionsRow: {
@@ -3186,6 +3217,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 22,
     marginBottom: 14,
+  },
+
+  productDetailsImage: {
+    width: "100%",
+    height: 220,
+    borderRadius: 20,
+    marginBottom: 16,
+    backgroundColor: "#E5E7EB",
   },
 
   productDescriptionText: {

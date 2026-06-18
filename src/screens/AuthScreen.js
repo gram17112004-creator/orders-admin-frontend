@@ -48,6 +48,8 @@ const authText = {
     loginFailed: "Login Failed",
     registrationFailed: "Registration Failed",
     somethingWrong: "Something went wrong",
+    emailExists: "This email already exists. Please login instead.",
+    userNotFound: "User not found. Please check the email or create an account.",
 
     english: "English",
     arabic: "Arabic",
@@ -82,6 +84,8 @@ const authText = {
     loginFailed: "فشل تسجيل الدخول",
     registrationFailed: "فشل إنشاء الحساب",
     somethingWrong: "حدث خطأ ما",
+    emailExists: "هذا الإيميل موجود بالفعل، جرّب تسجيل الدخول بدل إنشاء حساب.",
+    userNotFound: "المستخدم غير موجود، تأكد من الإيميل أو أنشئ حسابًا جديدًا.",
 
     english: "إنجليزي",
     arabic: "عربي",
@@ -115,6 +119,8 @@ const authText = {
     loginFailed: "ההתחברות נכשלה",
     registrationFailed: "ההרשמה נכשלה",
     somethingWrong: "משהו השתבש",
+    emailExists: "האימייל כבר קיים. נא להתחבר במקום להירשם.",
+    userNotFound: "המשתמש לא נמצא. בדוק את האימייל או צור חשבון חדש.",
 
     english: "אנגלית",
     arabic: "ערבית",
@@ -140,6 +146,10 @@ export default function AuthScreen({ onLogin }) {
     return authText[currentLanguage]?.[key] || authText.en[key] || key;
   }
 
+  function normalizeEmail(value) {
+    return String(value || "").trim().toLowerCase();
+  }
+
   async function changeLanguage(language) {
     await updateSettings({
       ...settings,
@@ -150,22 +160,26 @@ export default function AuthScreen({ onLogin }) {
   async function handleSubmit() {
     Keyboard.dismiss();
 
-    if (!email.trim()) {
+    const cleanName = name.trim();
+    const cleanEmail = normalizeEmail(email);
+    const cleanPassword = password.trim();
+
+    if (!cleanEmail) {
       Alert.alert(tr("warning"), tr("enterEmail"));
       return;
     }
 
-    if (!password.trim()) {
+    if (!cleanPassword) {
       Alert.alert(tr("warning"), tr("enterPassword"));
       return;
     }
 
-    if (!isLogin && !name.trim()) {
+    if (!isLogin && !cleanName) {
       Alert.alert(tr("warning"), tr("enterName"));
       return;
     }
 
-    if (password.trim().length < 6) {
+    if (cleanPassword.length < 6) {
       Alert.alert(tr("warning"), tr("passwordLength"));
       return;
     }
@@ -179,15 +193,21 @@ export default function AuthScreen({ onLogin }) {
 
       const payload = isLogin
         ? {
-            email: email.trim(),
-            password: password.trim(),
+            email: cleanEmail,
+            password: cleanPassword,
           }
         : {
-            name: name.trim(),
-            fullName: name.trim(),
-            email: email.trim(),
-            password: password.trim(),
+            name: cleanName,
+            fullName: cleanName,
+            email: cleanEmail,
+            password: cleanPassword,
           };
+
+      console.log("AUTH ENDPOINT:", endpoint);
+      console.log("AUTH PAYLOAD:", {
+        ...payload,
+        password: "******",
+      });
 
       const response = await axios.post(endpoint, payload);
 
@@ -207,14 +227,14 @@ export default function AuthScreen({ onLogin }) {
         data?.newUser ||
         data;
 
-     const userData = {
-  id: userFromApi?._id || userFromApi?.id || "",
-  name: userFromApi?.name || userFromApi?.fullName || name.trim(),
-  fullName: userFromApi?.fullName || userFromApi?.name || name.trim(),
-  email: userFromApi?.email || email.trim(),
-  role: userFromApi?.role || "customer",
-  token,
-};
+      const userData = {
+        id: userFromApi?._id || userFromApi?.id || "",
+        name: userFromApi?.name || userFromApi?.fullName || cleanName,
+        fullName: userFromApi?.fullName || userFromApi?.name || cleanName,
+        email: userFromApi?.email || cleanEmail,
+        role: userFromApi?.role || "customer",
+        token,
+      };
 
       if (token) {
         axios.defaults.headers.common.Authorization = `Bearer ${token}`;
@@ -229,12 +249,27 @@ export default function AuthScreen({ onLogin }) {
       console.log("AUTH ERROR MESSAGE:", error?.message);
       console.log("AUTH ERROR URL:", error?.config?.url);
 
+      const serverMessage =
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message ||
+        tr("somethingWrong");
+
+      const lowerMessage = String(serverMessage).toLowerCase();
+
+      let finalMessage = serverMessage;
+
+      if (lowerMessage.includes("email already exists")) {
+        finalMessage = tr("emailExists");
+      }
+
+      if (lowerMessage.includes("user not found")) {
+        finalMessage = tr("userNotFound");
+      }
+
       Alert.alert(
         isLogin ? tr("loginFailed") : tr("registrationFailed"),
-        error?.response?.data?.message ||
-          error?.response?.data?.error ||
-          error?.message ||
-          tr("somethingWrong")
+        finalMessage
       );
     } finally {
       setLoading(false);
@@ -344,6 +379,7 @@ export default function AuthScreen({ onLogin }) {
               onChangeText={setEmail}
               keyboardType="email-address"
               autoCapitalize="none"
+              autoCorrect={false}
               returnKeyType="next"
             />
 
@@ -357,6 +393,8 @@ export default function AuthScreen({ onLogin }) {
               value={password}
               onChangeText={setPassword}
               secureTextEntry
+              autoCapitalize="none"
+              autoCorrect={false}
               returnKeyType="done"
               onSubmitEditing={handleSubmit}
             />

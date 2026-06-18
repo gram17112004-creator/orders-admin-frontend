@@ -1,7 +1,6 @@
 import React from "react";
 import {
   FlatList,
-  Pressable,
   RefreshControl,
   StyleSheet,
   Text,
@@ -15,19 +14,16 @@ import { useSettings } from "../context/SettingsContext";
 const customersText = {
   en: {
     searchPlaceholder: "Search by customer name, phone, or address...",
-    addNewCustomer: "+ Add New Customer",
     noCustomersFound: "No customers found",
   },
 
   ar: {
     searchPlaceholder: "ابحث حسب اسم الزبون أو الهاتف أو العنوان...",
-    addNewCustomer: "+ إضافة زبون جديد",
     noCustomersFound: "لا يوجد زبائن",
   },
 
   he: {
     searchPlaceholder: "חפש לפי שם לקוח, טלפון או כתובת...",
-    addNewCustomer: "+ הוסף לקוח חדש",
     noCustomersFound: "לא נמצאו לקוחות",
   },
 };
@@ -38,7 +34,6 @@ export default function CustomersScreen({
   filteredCustomers,
   refreshing,
   onRefresh,
-  openAddModal,
   getCustomerOrderCount,
   getCustomerTotalPurchases,
   openEditCustomer,
@@ -61,13 +56,6 @@ export default function CustomersScreen({
         value={search}
         onChangeText={setSearch}
       />
-
-      <Pressable
-        style={[styles.addButton, { backgroundColor: theme.primary }]}
-        onPress={() => openAddModal("customer")}
-      >
-        <Text style={styles.addButtonText}>{tr("addNewCustomer")}</Text>
-      </Pressable>
 
       <FlatList
         data={filteredCustomers}
@@ -100,21 +88,6 @@ export default function CustomersScreen({
 const styles = StyleSheet.create({
   listScreen: {
     flex: 1,
-  },
-
-  addButton: {
-    marginHorizontal: 14,
-    marginTop: 12,
-    marginBottom: 10,
-    borderRadius: 16,
-    paddingVertical: 14,
-  },
-
-  addButtonText: {
-    color: "#FFFFFF",
-    fontWeight: "900",
-    fontSize: 16,
-    textAlign: "center",
   },
 
   listContent: {

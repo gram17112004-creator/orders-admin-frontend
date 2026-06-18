@@ -1,5 +1,11 @@
 import React from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import {
+  Image,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
 import { useSettings } from "../context/SettingsContext";
 
@@ -73,6 +79,14 @@ export default function ProductCard({ item, openEditProduct, confirmDelete }) {
 
   return (
     <View style={[styles.card, { backgroundColor: theme.card }]}>
+      {item.imageUrl ? (
+        <Image
+          source={{ uri: item.imageUrl }}
+          style={styles.productImage}
+          resizeMode="cover"
+        />
+      ) : null}
+
       <View
         style={[
           styles.cardHeader,
@@ -176,6 +190,14 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     borderWidth: 1,
     borderColor: "#E5E7EB",
+  },
+
+  productImage: {
+    width: "100%",
+    height: 160,
+    borderRadius: 16,
+    marginBottom: 12,
+    backgroundColor: "#E5E7EB",
   },
 
   cardHeader: {

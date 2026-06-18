@@ -45,6 +45,7 @@ const modalText = {
     category: "Category",
     price: "Price",
     stockQuantity: "Stock Quantity",
+    productImageUrl: "Product Image URL",
     productDescription: "Product Description",
 
     general: "General",
@@ -97,6 +98,7 @@ const modalText = {
     category: "التصنيف",
     price: "السعر",
     stockQuantity: "كمية المخزون",
+    productImageUrl: "رابط صورة المنتج",
     productDescription: "وصف المنتج",
 
     general: "عام",
@@ -149,6 +151,7 @@ const modalText = {
     category: "קטגוריה",
     price: "מחיר",
     stockQuantity: "כמות במלאי",
+    productImageUrl: "קישור תמונת מוצר",
     productDescription: "תיאור מוצר",
 
     general: "כללי",
@@ -229,6 +232,8 @@ export default function EntityModal({
         multiline={multiline}
         textAlignVertical={multiline ? "top" : "center"}
         returnKeyType={keyboardType === "numeric" ? "done" : "next"}
+        autoCapitalize="none"
+        autoCorrect={false}
         onSubmitEditing={Keyboard.dismiss}
         onChangeText={onChangeText}
       />
@@ -261,12 +266,7 @@ export default function EntityModal({
                 onSelect(item);
               }}
             >
-              <Text
-                style={[
-                  styles.choiceText,
-                  active && styles.activeChoiceText,
-                ]}
-              >
+              <Text style={[styles.choiceText, active && styles.activeChoiceText]}>
                 {labelGetter ? labelGetter(item) : item}
               </Text>
             </Pressable>
@@ -455,8 +455,7 @@ export default function EntityModal({
           >
             {tr("total")}:{" "}
             {formatMoney(
-              Number(orderForm.quantity || 0) *
-                Number(orderForm.unitPrice || 0)
+              Number(orderForm.quantity || 0) * Number(orderForm.unitPrice || 0)
             )}
           </Text>
         </View>
@@ -542,6 +541,14 @@ export default function EntityModal({
           keyboardType: "numeric",
           onChangeText: (text) =>
             setProductForm((prev) => ({ ...prev, stock: text })),
+        })}
+
+        {renderTextInput({
+          placeholder: tr("productImageUrl"),
+          value: productForm.imageUrl,
+          keyboardType: "url",
+          onChangeText: (text) =>
+            setProductForm((prev) => ({ ...prev, imageUrl: text })),
         })}
 
         {renderTextInput({
@@ -644,7 +651,10 @@ export default function EntityModal({
                     ]}
                   >
                     <Pressable
-                      style={[styles.saveButton, { backgroundColor: theme.primary }]}
+                      style={[
+                        styles.saveButton,
+                        { backgroundColor: theme.primary },
+                      ]}
                       onPress={saveCurrentModal}
                     >
                       <Text style={styles.saveButtonText}>{tr("save")}</Text>

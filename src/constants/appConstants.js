@@ -51,6 +51,7 @@ export const emptyProductForm = {
   category: "",
   price: "",
   stock: "",
+  imageUrl: "",
   description: "",
 };
 
