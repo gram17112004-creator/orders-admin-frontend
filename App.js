@@ -53,7 +53,7 @@ import {
 import { getOrderTotal, getOrderUnitPrice } from "./src/utils/orderUtils";
 
 function MainApp() {
-  const { theme, settings, isRTL, formatMoney } = useSettings();
+  const { theme, settings, isRTL, formatMoney, updateSettings } = useSettings();
 
   const [activeScreen, setActiveScreen] = useState("dashboard");
 
@@ -110,6 +110,13 @@ function MainApp() {
     address: "",
     paymentMethod: "cash",
     notes: "",
+  });
+
+  const [customerProfileEditMode, setCustomerProfileEditMode] = useState(false);
+  const [customerProfileForm, setCustomerProfileForm] = useState({
+    name: "",
+    phone: "",
+    address: "",
   });
 
   const isAdmin = currentUser?.role === "admin";
@@ -192,6 +199,37 @@ function MainApp() {
       noDescription: "No description available",
       searchProduct: "Search product...",
       clearSearch: "Clear",
+
+      profile: "Profile",
+      myProfile: "My Profile",
+      accountInfo: "Account Information",
+      email: "Email",
+      phoneNumber: "Phone Number",
+      addressText: "Address",
+      totalOrders: "Total Orders",
+      totalPurchases: "Total Purchases",
+      pendingOrders: "Pending Orders",
+      completedOrders: "Completed Orders",
+      cancelledOrders: "Cancelled Orders",
+      lastOrders: "Last Orders",
+      quickActions: "Quick Actions",
+      goToProducts: "Go to Products",
+      goToCart: "Go to Cart",
+      goToOrders: "Go to My Orders",
+      noProfileOrders: "No orders yet",
+      editProfile: "Edit Profile",
+      saveProfile: "Save Profile",
+      profileUpdatedTitle: "Profile Updated",
+      profileUpdatedMessage: "Your profile information was saved successfully",
+      customerSettings: "Customer Settings",
+      changeLanguage: "Change Language",
+      changeCurrency: "Change Currency",
+      appearance: "Appearance",
+      lightMode: "Light Mode",
+      darkMode: "Dark Mode",
+      english: "English",
+      arabic: "Arabic",
+      hebrew: "Hebrew",
     },
 
     ar: {
@@ -270,6 +308,37 @@ function MainApp() {
       noDescription: "لا يوجد وصف متوفر",
       searchProduct: "ابحث عن منتج...",
       clearSearch: "مسح",
+
+      profile: "بروفايلي",
+      myProfile: "بروفايل الزبون",
+      accountInfo: "معلومات الحساب",
+      email: "الإيميل",
+      phoneNumber: "رقم الهاتف",
+      addressText: "العنوان",
+      totalOrders: "عدد الطلبات",
+      totalPurchases: "إجمالي المشتريات",
+      pendingOrders: "طلبات معلقة",
+      completedOrders: "طلبات مكتملة",
+      cancelledOrders: "طلبات ملغية",
+      lastOrders: "آخر الطلبات",
+      quickActions: "إجراءات سريعة",
+      goToProducts: "الذهاب للمنتجات",
+      goToCart: "الذهاب للسلة",
+      goToOrders: "الذهاب لطلباتي",
+      noProfileOrders: "لا توجد طلبات بعد",
+      editProfile: "تعديل البروفايل",
+      saveProfile: "حفظ البروفايل",
+      profileUpdatedTitle: "تم تحديث البروفايل",
+      profileUpdatedMessage: "تم حفظ بيانات البروفايل بنجاح",
+      customerSettings: "إعدادات الزبون",
+      changeLanguage: "تغيير اللغة",
+      changeCurrency: "تغيير العملة",
+      appearance: "المظهر",
+      lightMode: "الوضع الفاتح",
+      darkMode: "الوضع الليلي",
+      english: "إنجليزي",
+      arabic: "عربي",
+      hebrew: "عبري",
     },
 
     he: {
@@ -348,6 +417,37 @@ function MainApp() {
       noDescription: "אין תיאור זמין",
       searchProduct: "חפש מוצר...",
       clearSearch: "נקה",
+
+      profile: "פרופיל",
+      myProfile: "הפרופיל שלי",
+      accountInfo: "פרטי חשבון",
+      email: "אימייל",
+      phoneNumber: "מספר טלפון",
+      addressText: "כתובת",
+      totalOrders: "סה״כ הזמנות",
+      totalPurchases: "סה״כ רכישות",
+      pendingOrders: "הזמנות ממתינות",
+      completedOrders: "הזמנות שהושלמו",
+      cancelledOrders: "הזמנות שבוטלו",
+      lastOrders: "הזמנות אחרונות",
+      quickActions: "פעולות מהירות",
+      goToProducts: "מעבר למוצרים",
+      goToCart: "מעבר לעגלה",
+      goToOrders: "מעבר להזמנות שלי",
+      noProfileOrders: "אין הזמנות עדיין",
+      editProfile: "עריכת פרופיל",
+      saveProfile: "שמירת פרופיל",
+      profileUpdatedTitle: "הפרופיל עודכן",
+      profileUpdatedMessage: "פרטי הפרופיל נשמרו בהצלחה",
+      customerSettings: "הגדרות לקוח",
+      changeLanguage: "שינוי שפה",
+      changeCurrency: "שינוי מטבע",
+      appearance: "מראה",
+      lightMode: "מצב בהיר",
+      darkMode: "מצב כהה",
+      english: "אנגלית",
+      arabic: "ערבית",
+      hebrew: "עברית",
     },
   };
 
@@ -425,6 +525,8 @@ function MainApp() {
       setCustomerOrderDetailsVisible(false);
       setSelectedCustomerOrder(null);
       setCustomerOrderEditMode(false);
+      setCustomerProfileEditMode(false);
+      setCustomerProfileForm({ name: "", phone: "", address: "" });
     } catch (error) {
       console.log("LOGOUT ERROR:", error?.message);
     }
@@ -840,6 +942,28 @@ function MainApp() {
             {ct("myOrders")}
           </Text>
         </Pressable>
+
+        <Pressable
+          style={[
+            styles.customerTabButton,
+            customerScreen === "profile" && {
+              backgroundColor: theme.primary,
+              borderColor: theme.primary,
+            },
+          ]}
+          onPress={() => setCustomerScreen("profile")}
+        >
+          <Text
+            style={[
+              styles.customerTabText,
+              {
+                color: customerScreen === "profile" ? "#FFFFFF" : theme.text,
+              },
+            ]}
+          >
+            {ct("profile")}
+          </Text>
+        </Pressable>
       </View>
     );
   }
@@ -928,7 +1052,7 @@ function MainApp() {
     setCheckoutForm({
       name: currentUser?.fullName || currentUser?.name || "",
       phone: currentUser?.phone || "",
-      address: "",
+      address: currentUser?.address || "",
       paymentMethod: "cash",
       notes: "",
     });
@@ -1843,6 +1967,686 @@ function MainApp() {
     );
   }
 
+
+  function startCustomerProfileEdit(profileData) {
+    setCustomerProfileForm({
+      name: profileData.name === "-" ? "" : profileData.name,
+      phone: profileData.phone === "-" ? "" : profileData.phone,
+      address: profileData.address === "-" ? "" : profileData.address,
+    });
+
+    setCustomerProfileEditMode(true);
+  }
+
+  async function saveCustomerProfile() {
+    Keyboard.dismiss();
+
+    if (!customerProfileForm.name.trim()) {
+      Alert.alert(ct("orderErrorTitle"), ct("enterName"));
+      return;
+    }
+
+    if (!customerProfileForm.phone.trim()) {
+      Alert.alert(ct("orderErrorTitle"), ct("enterPhone"));
+      return;
+    }
+
+    if (!customerProfileForm.address.trim()) {
+      Alert.alert(ct("orderErrorTitle"), ct("enterAddress"));
+      return;
+    }
+
+    const updatedUser = {
+      ...currentUser,
+      name: customerProfileForm.name.trim(),
+      fullName: customerProfileForm.name.trim(),
+      phone: customerProfileForm.phone.trim(),
+      address: customerProfileForm.address.trim(),
+    };
+
+    try {
+      setCurrentUser(updatedUser);
+      await AsyncStorage.setItem("currentUser", JSON.stringify(updatedUser));
+
+      setCheckoutForm((prev) => ({
+        ...prev,
+        name: updatedUser.fullName,
+        phone: updatedUser.phone,
+        address: updatedUser.address,
+      }));
+
+      setCustomerProfileEditMode(false);
+      Alert.alert(ct("profileUpdatedTitle"), ct("profileUpdatedMessage"));
+    } catch (error) {
+      console.log("SAVE CUSTOMER PROFILE ERROR:", error?.message);
+      Alert.alert(ct("orderErrorTitle"), error?.message || "Unknown error occurred");
+    }
+  }
+
+  async function updateCustomerSettings(newSettings) {
+    try {
+      await updateSettings(newSettings);
+    } catch (error) {
+      console.log("CUSTOMER SETTINGS ERROR:", error?.message);
+    }
+  }
+
+  function renderCustomerSettingsPanel() {
+    const languageOptions = [
+      { value: "en", label: ct("english") },
+      { value: "ar", label: ct("arabic") },
+      { value: "he", label: ct("hebrew") },
+    ];
+
+    const currencyOptions = [
+      { value: "₪", label: "₪" },
+      { value: "$", label: "$" },
+      { value: "€", label: "€" },
+    ];
+
+    const appearanceOptions = [
+      { value: "green", label: `☀️ ${ct("lightMode")}` },
+      { value: "dark", label: `🌙 ${ct("darkMode")}` },
+    ];
+
+    function renderSettingOptions(options, selectedValue, onSelect) {
+      return (
+        <View
+          style={[
+            styles.customerSettingsOptionsRow,
+            { flexDirection: isRTL ? "row-reverse" : "row" },
+          ]}
+        >
+          {options.map((option) => {
+            const active = selectedValue === option.value;
+
+            return (
+              <Pressable
+                key={option.value}
+                style={[
+                  styles.customerSettingsOption,
+                  {
+                    borderColor: active ? theme.primary : "#E5E7EB",
+                    backgroundColor: active ? theme.primary : "#FFFFFF",
+                  },
+                ]}
+                onPress={() => onSelect(option.value)}
+              >
+                <Text
+                  style={[
+                    styles.customerSettingsOptionText,
+                    { color: active ? "#FFFFFF" : "#111827" },
+                  ]}
+                >
+                  {option.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      );
+    }
+
+    return (
+      <View style={[styles.profileCard, { backgroundColor: theme.card }]}> 
+        <Text
+          style={[
+            styles.profileSectionTitle,
+            {
+              color: theme.text,
+              textAlign: isRTL ? "right" : "left",
+            },
+          ]}
+        >
+          {ct("customerSettings")}
+        </Text>
+
+        <Text
+          style={[
+            styles.customerSettingsLabel,
+            {
+              color: theme.muted,
+              textAlign: isRTL ? "right" : "left",
+            },
+          ]}
+        >
+          {ct("changeLanguage")}
+        </Text>
+
+        {renderSettingOptions(languageOptions, settings.language, (value) =>
+          updateCustomerSettings({ language: value })
+        )}
+
+        <Text
+          style={[
+            styles.customerSettingsLabel,
+            {
+              color: theme.muted,
+              textAlign: isRTL ? "right" : "left",
+            },
+          ]}
+        >
+          {ct("changeCurrency")}
+        </Text>
+
+        {renderSettingOptions(currencyOptions, settings.currency, (value) =>
+          updateCustomerSettings({ currency: value })
+        )}
+
+        <Text
+          style={[
+            styles.customerSettingsLabel,
+            {
+              color: theme.muted,
+              textAlign: isRTL ? "right" : "left",
+            },
+          ]}
+        >
+          {ct("appearance")}
+        </Text>
+
+        {renderSettingOptions(appearanceOptions, settings.theme, (value) =>
+          updateCustomerSettings({ theme: value })
+        )}
+      </View>
+    );
+  }
+
+  function renderCustomerProfile() {
+    const sortedCustomerOrders = [...customerOrders].sort((a, b) => {
+      return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+    });
+
+    const latestOrder = sortedCustomerOrders[0];
+
+    const profileName =
+      currentUser?.fullName ||
+      currentUser?.name ||
+      latestOrder?.customerName ||
+      readValueFromOrderNotes(latestOrder?.notes, "Customer name") ||
+      "Customer";
+
+    const profileEmail = currentUser?.email || "-";
+
+    const profilePhone =
+      currentUser?.phone ||
+      latestOrder?.customerPhone ||
+      readValueFromOrderNotes(latestOrder?.notes, "Phone") ||
+      "-";
+
+    const profileAddress =
+      currentUser?.address ||
+      latestOrder?.customerAddress ||
+      readValueFromOrderNotes(latestOrder?.notes, "Address") ||
+      "-";
+
+    const totalCustomerPurchases = customerOrders
+      .filter((order) => order.status !== "cancelled")
+      .reduce((sum, order) => sum + getOrderTotal(order), 0);
+
+    const pendingCustomerOrders = customerOrders.filter(
+      (order) => order.status === "pending"
+    ).length;
+
+    const completedCustomerOrders = customerOrders.filter(
+      (order) => order.status === "completed"
+    ).length;
+
+    const cancelledCustomerOrders = customerOrders.filter(
+      (order) => order.status === "cancelled"
+    ).length;
+
+    const lastOrders = sortedCustomerOrders.slice(0, 3);
+
+    return (
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.customerList}
+      >
+        <View style={[styles.profileHeroCard, { backgroundColor: theme.card }]}>
+          <View style={[styles.profileAvatar, { backgroundColor: theme.primary }]}>
+            <Text style={styles.profileAvatarText}>
+              {String(profileName || "C").charAt(0).toUpperCase()}
+            </Text>
+          </View>
+
+          <Text
+            style={[
+              styles.profileName,
+              {
+                color: theme.text,
+                textAlign: "center",
+              },
+            ]}
+          >
+            {profileName}
+          </Text>
+
+          <Text
+            style={[
+              styles.profileEmail,
+              {
+                color: theme.muted,
+                textAlign: "center",
+              },
+            ]}
+          >
+            {profileEmail}
+          </Text>
+        </View>
+
+        <View style={[styles.profileCard, { backgroundColor: theme.card }]}> 
+          <View
+            style={[
+              styles.profileSectionHeader,
+              { flexDirection: isRTL ? "row-reverse" : "row" },
+            ]}
+          >
+            <Text
+              style={[
+                styles.profileSectionTitle,
+                {
+                  color: theme.text,
+                  textAlign: isRTL ? "right" : "left",
+                  marginBottom: 0,
+                },
+              ]}
+            >
+              {ct("accountInfo")}
+            </Text>
+
+            {!customerProfileEditMode ? (
+              <Pressable
+                style={[styles.profileEditButton, { borderColor: theme.primary }]}
+                onPress={() =>
+                  startCustomerProfileEdit({
+                    name: profileName,
+                    phone: profilePhone,
+                    address: profileAddress,
+                  })
+                }
+              >
+                <Text style={[styles.profileEditButtonText, { color: theme.primary }]}> 
+                  {ct("editProfile")}
+                </Text>
+              </Pressable>
+            ) : null}
+          </View>
+
+          {!customerProfileEditMode ? (
+            <>
+              <View style={styles.profileInfoBox}>
+                <Text
+                  style={[
+                    styles.profileInfoLabel,
+                    {
+                      color: theme.muted,
+                      textAlign: isRTL ? "right" : "left",
+                    },
+                  ]}
+                >
+                  {ct("customerName")}
+                </Text>
+
+                <Text
+                  style={[
+                    styles.profileInfoValue,
+                    {
+                      color: theme.text,
+                      textAlign: isRTL ? "right" : "left",
+                    },
+                  ]}
+                >
+                  {profileName}
+                </Text>
+              </View>
+
+              <View style={styles.profileInfoBox}>
+                <Text
+                  style={[
+                    styles.profileInfoLabel,
+                    {
+                      color: theme.muted,
+                      textAlign: isRTL ? "right" : "left",
+                    },
+                  ]}
+                >
+                  {ct("email")}
+                </Text>
+
+                <Text
+                  style={[
+                    styles.profileInfoValue,
+                    {
+                      color: theme.text,
+                      textAlign: isRTL ? "right" : "left",
+                    },
+                  ]}
+                >
+                  {profileEmail}
+                </Text>
+              </View>
+
+              <View style={styles.profileInfoBox}>
+                <Text
+                  style={[
+                    styles.profileInfoLabel,
+                    {
+                      color: theme.muted,
+                      textAlign: isRTL ? "right" : "left",
+                    },
+                  ]}
+                >
+                  {ct("phoneNumber")}
+                </Text>
+
+                <Text
+                  style={[
+                    styles.profileInfoValue,
+                    {
+                      color: theme.text,
+                      textAlign: isRTL ? "right" : "left",
+                    },
+                  ]}
+                >
+                  {profilePhone}
+                </Text>
+              </View>
+
+              <View style={styles.profileInfoBox}>
+                <Text
+                  style={[
+                    styles.profileInfoLabel,
+                    {
+                      color: theme.muted,
+                      textAlign: isRTL ? "right" : "left",
+                    },
+                  ]}
+                >
+                  {ct("addressText")}
+                </Text>
+
+                <Text
+                  style={[
+                    styles.profileInfoValue,
+                    {
+                      color: theme.text,
+                      textAlign: isRTL ? "right" : "left",
+                    },
+                  ]}
+                >
+                  {profileAddress}
+                </Text>
+              </View>
+            </>
+          ) : (
+            <>
+              <TextInput
+                style={[
+                  styles.profileInput,
+                  {
+                    color: theme.text,
+                    borderColor: "#E5E7EB",
+                    textAlign: isRTL ? "right" : "left",
+                  },
+                ]}
+                placeholder={ct("customerName")}
+                placeholderTextColor="#777"
+                value={customerProfileForm.name}
+                onChangeText={(value) =>
+                  setCustomerProfileForm((prev) => ({ ...prev, name: value }))
+                }
+              />
+
+              <TextInput
+                style={[
+                  styles.profileInput,
+                  {
+                    color: theme.text,
+                    borderColor: "#E5E7EB",
+                    textAlign: isRTL ? "right" : "left",
+                  },
+                ]}
+                placeholder={ct("phoneNumber")}
+                placeholderTextColor="#777"
+                keyboardType="phone-pad"
+                value={customerProfileForm.phone}
+                onChangeText={(value) =>
+                  setCustomerProfileForm((prev) => ({ ...prev, phone: value }))
+                }
+              />
+
+              <TextInput
+                style={[
+                  styles.profileInput,
+                  {
+                    color: theme.text,
+                    borderColor: "#E5E7EB",
+                    textAlign: isRTL ? "right" : "left",
+                  },
+                ]}
+                placeholder={ct("addressText")}
+                placeholderTextColor="#777"
+                value={customerProfileForm.address}
+                onChangeText={(value) =>
+                  setCustomerProfileForm((prev) => ({ ...prev, address: value }))
+                }
+              />
+
+              <Pressable
+                style={[styles.profileActionButton, { backgroundColor: theme.primary }]}
+                onPress={saveCustomerProfile}
+                disabled={loading}
+              >
+                <Text style={styles.profileActionText}>{ct("saveProfile")}</Text>
+              </Pressable>
+
+              <Pressable
+                style={styles.cancelButton}
+                onPress={() => setCustomerProfileEditMode(false)}
+              >
+                <Text style={styles.cancelButtonText}>{ct("cancel")}</Text>
+              </Pressable>
+            </>
+          )}
+        </View>
+
+        {renderCustomerSettingsPanel()}
+
+        <View
+          style={[
+            styles.profileStatsRow,
+            { flexDirection: isRTL ? "row-reverse" : "row" },
+          ]}
+        >
+          <View style={[styles.profileStatCard, { backgroundColor: theme.card }]}>
+            <Text style={[styles.profileStatNumber, { color: theme.text }]}> 
+              {customerOrders.length}
+            </Text>
+            <Text style={[styles.profileStatLabel, { color: theme.muted }]}> 
+              {ct("totalOrders")}
+            </Text>
+          </View>
+
+          <View style={[styles.profileStatCard, { backgroundColor: theme.card }]}>
+            <Text style={[styles.profileStatNumber, { color: theme.text }]}> 
+              {formatMoney(totalCustomerPurchases)}
+            </Text>
+            <Text style={[styles.profileStatLabel, { color: theme.muted }]}> 
+              {ct("totalPurchases")}
+            </Text>
+          </View>
+        </View>
+
+        <View
+          style={[
+            styles.profileStatsRow,
+            { flexDirection: isRTL ? "row-reverse" : "row" },
+          ]}
+        >
+          <View
+            style={[styles.profileSmallStatCard, { backgroundColor: theme.card }]}
+          >
+            <Text style={[styles.profileSmallStatNumber, { color: "#F59E0B" }]}> 
+              {pendingCustomerOrders}
+            </Text>
+            <Text style={[styles.profileStatLabel, { color: theme.muted }]}> 
+              {ct("pendingOrders")}
+            </Text>
+          </View>
+
+          <View
+            style={[styles.profileSmallStatCard, { backgroundColor: theme.card }]}
+          >
+            <Text style={[styles.profileSmallStatNumber, { color: "#16A34A" }]}> 
+              {completedCustomerOrders}
+            </Text>
+            <Text style={[styles.profileStatLabel, { color: theme.muted }]}> 
+              {ct("completedOrders")}
+            </Text>
+          </View>
+
+          <View
+            style={[styles.profileSmallStatCard, { backgroundColor: theme.card }]}
+          >
+            <Text style={[styles.profileSmallStatNumber, { color: "#DC2626" }]}> 
+              {cancelledCustomerOrders}
+            </Text>
+            <Text style={[styles.profileStatLabel, { color: theme.muted }]}> 
+              {ct("cancelledOrders")}
+            </Text>
+          </View>
+        </View>
+
+        <View style={[styles.profileCard, { backgroundColor: theme.card }]}>
+          <Text
+            style={[
+              styles.profileSectionTitle,
+              {
+                color: theme.text,
+                textAlign: isRTL ? "right" : "left",
+              },
+            ]}
+          >
+            {ct("lastOrders")}
+          </Text>
+
+          {lastOrders.length === 0 ? (
+            <Text
+              style={[
+                styles.profileEmptyText,
+                {
+                  color: theme.muted,
+                  textAlign: isRTL ? "right" : "left",
+                },
+              ]}
+            >
+              {ct("noProfileOrders")}
+            </Text>
+          ) : (
+            lastOrders.map((order) => {
+              const total = getOrderTotal(order);
+
+              return (
+                <Pressable
+                  key={order._id}
+                  style={[
+                    styles.profileOrderItem,
+                    { flexDirection: isRTL ? "row-reverse" : "row" },
+                  ]}
+                  onPress={() => openCustomerOrderDetails(order)}
+                >
+                  <View style={{ flex: 1 }}>
+                    <Text
+                      style={[
+                        styles.profileOrderTitle,
+                        {
+                          color: theme.text,
+                          textAlign: isRTL ? "right" : "left",
+                        },
+                      ]}
+                    >
+                      {order.productName || ct("unknownProduct")}
+                    </Text>
+
+                    <Text
+                      style={[
+                        styles.profileOrderSub,
+                        {
+                          color: theme.muted,
+                          textAlign: isRTL ? "right" : "left",
+                        },
+                      ]}
+                    >
+                      {getCustomerOrderDate(order)} • {formatMoney(total)}
+                    </Text>
+                  </View>
+
+                  <View
+                    style={[
+                      styles.profileStatusBadge,
+                      {
+                        backgroundColor: getCustomerStatusColor(
+                          order.status || "pending"
+                        ),
+                      },
+                    ]}
+                  >
+                    <Text style={styles.profileStatusText}>
+                      {ct(order.status || "pending")}
+                    </Text>
+                  </View>
+                </Pressable>
+              );
+            })
+          )}
+        </View>
+
+        <View style={[styles.profileCard, { backgroundColor: theme.card }]}>
+          <Text
+            style={[
+              styles.profileSectionTitle,
+              {
+                color: theme.text,
+                textAlign: isRTL ? "right" : "left",
+              },
+            ]}
+          >
+            {ct("quickActions")}
+          </Text>
+
+          <Pressable
+            style={[styles.profileActionButton, { backgroundColor: theme.primary }]}
+            onPress={() => setCustomerScreen("products")}
+          >
+            <Text style={styles.profileActionText}>{ct("goToProducts")}</Text>
+          </Pressable>
+
+          <Pressable
+            style={[styles.profileActionButton, { backgroundColor: "#111827" }]}
+            onPress={() => setCustomerScreen("cart")}
+          >
+            <Text style={styles.profileActionText}>{ct("goToCart")}</Text>
+          </Pressable>
+
+          <Pressable
+            style={[styles.profileActionButton, { backgroundColor: "#2563EB" }]}
+            onPress={() => setCustomerScreen("orders")}
+          >
+            <Text style={styles.profileActionText}>{ct("goToOrders")}</Text>
+          </Pressable>
+
+          <Pressable
+            style={[styles.profileActionButton, { backgroundColor: "#DC2626" }]}
+            onPress={handleLogout}
+          >
+            <Text style={styles.profileActionText}>{ct("logout")}</Text>
+          </Pressable>
+        </View>
+      </ScrollView>
+    );
+  }
+
   function renderProductDetailsModal() {
     if (!selectedProduct) return null;
 
@@ -2547,7 +3351,9 @@ function MainApp() {
             ? ct("availableProducts")
             : customerScreen === "cart"
             ? ct("cart")
-            : ct("myOrders")}
+            : customerScreen === "orders"
+            ? ct("myOrders")
+            : ct("myProfile")}
         </Text>
 
         <Text
@@ -2569,10 +3375,13 @@ function MainApp() {
         {customerScreen === "products" ? renderProductsList() : null}
         {customerScreen === "cart" ? renderCartList() : null}
         {customerScreen === "orders" ? renderOrdersList() : null}
+        {customerScreen === "profile" ? renderCustomerProfile() : null}
 
-        <Pressable style={styles.customerLogoutButton} onPress={handleLogout}>
-          <Text style={styles.customerLogoutText}>{ct("logout")}</Text>
-        </Pressable>
+        {customerScreen !== "profile" ? (
+          <Pressable style={styles.customerLogoutButton} onPress={handleLogout}>
+            <Text style={styles.customerLogoutText}>{ct("logout")}</Text>
+          </Pressable>
+        ) : null}
 
         {renderProductDetailsModal()}
         {renderCheckoutModal()}
@@ -3237,4 +4046,217 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     marginBottom: 14,
   },
+
+  profileSectionHeader: {
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 10,
+    marginBottom: 12,
+  },
+
+  profileEditButton: {
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+
+  profileEditButtonText: {
+    fontSize: 13,
+    fontWeight: "900",
+  },
+
+  profileInput: {
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginBottom: 10,
+    fontSize: 15,
+    backgroundColor: "#FFFFFF",
+  },
+
+  customerSettingsLabel: {
+    fontSize: 14,
+    fontWeight: "900",
+    marginBottom: 8,
+    marginTop: 8,
+  },
+
+  customerSettingsOptionsRow: {
+    gap: 8,
+    marginBottom: 10,
+  },
+
+  customerSettingsOption: {
+    flex: 1,
+    borderRadius: 999,
+    paddingVertical: 11,
+    paddingHorizontal: 10,
+    borderWidth: 1,
+    alignItems: "center",
+  },
+
+  customerSettingsOptionText: {
+    fontSize: 13,
+    fontWeight: "900",
+  },
+
+  profileHeroCard: {
+    borderRadius: 24,
+    padding: 22,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    alignItems: "center",
+  },
+
+  profileAvatar: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 12,
+  },
+
+  profileAvatarText: {
+    color: "#FFFFFF",
+    fontSize: 42,
+    fontWeight: "900",
+  },
+
+  profileName: {
+    fontSize: 23,
+    fontWeight: "900",
+  },
+
+  profileEmail: {
+    fontSize: 14,
+    marginTop: 5,
+  },
+
+  profileCard: {
+    borderRadius: 22,
+    padding: 16,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+  },
+
+  profileSectionTitle: {
+    fontSize: 19,
+    fontWeight: "900",
+    marginBottom: 12,
+  },
+
+  profileInfoBox: {
+    backgroundColor: "#F9FAFB",
+    borderRadius: 14,
+    padding: 12,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+  },
+
+  profileInfoLabel: {
+    fontSize: 13,
+    fontWeight: "700",
+    marginBottom: 4,
+  },
+
+  profileInfoValue: {
+    fontSize: 16,
+    fontWeight: "900",
+  },
+
+  profileStatsRow: {
+    gap: 10,
+    marginBottom: 14,
+  },
+
+  profileStatCard: {
+    flex: 1,
+    borderRadius: 20,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+  },
+
+  profileSmallStatCard: {
+    flex: 1,
+    borderRadius: 18,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+  },
+
+  profileStatNumber: {
+    fontSize: 23,
+    fontWeight: "900",
+    marginBottom: 5,
+  },
+
+  profileSmallStatNumber: {
+    fontSize: 21,
+    fontWeight: "900",
+    marginBottom: 5,
+  },
+
+  profileStatLabel: {
+    fontSize: 12,
+    fontWeight: "800",
+  },
+
+  profileEmptyText: {
+    fontSize: 14,
+    paddingVertical: 10,
+  },
+
+  profileOrderItem: {
+    alignItems: "center",
+    gap: 10,
+    backgroundColor: "#F9FAFB",
+    borderRadius: 14,
+    padding: 12,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+  },
+
+  profileOrderTitle: {
+    fontSize: 15,
+    fontWeight: "900",
+  },
+
+  profileOrderSub: {
+    fontSize: 12,
+    marginTop: 4,
+  },
+
+  profileStatusBadge: {
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+  },
+
+  profileStatusText: {
+    color: "#FFFFFF",
+    fontSize: 11,
+    fontWeight: "900",
+  },
+
+  profileActionButton: {
+    borderRadius: 16,
+    paddingVertical: 14,
+    marginBottom: 10,
+  },
+
+  profileActionText: {
+    color: "#FFFFFF",
+    textAlign: "center",
+    fontSize: 15,
+    fontWeight: "900",
+  },
+
 });
